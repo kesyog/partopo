@@ -1,5 +1,9 @@
 # partopo
 
+[![crates.io](https://img.shields.io/crates/v/partopo?style=flat-square)](https://crates.io/crates/partopo)
+[![Apache 2.0 license](https://img.shields.io/github/license/kesyog/partopo?style=flat-square)](./LICENSE)
+[![docs.rs](https://img.shields.io/docsrs/partopo?style=flat-square)](https://docs.rs/partopo)
+
 Execute work described by a dependency graph using either a single-threaded worker or in parallel
 using a threadpool.
 
