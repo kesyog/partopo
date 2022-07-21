@@ -1,0 +1,16 @@
+[package]
+name = "partopo"
+description = "Functions to execute work described by a dependency graph"
+authors = ["Kesavan Yogeswaran <hikes@google.com>"]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+categories = ["algorithms", "data-structures"] 
+keywords = ["topological_sort", "dependency_graph", "scheduling"]
+homepage = "https://github.com/kesyog/partopo"
+repository = "https://github.com/kesyog/partopo"
+
+[dependencies]
+crossbeam-channel = "0.5"
+daggy = { version = "0.8", features = ["stable_dag"] }
+rayon = "1"
