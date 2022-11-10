@@ -110,7 +110,7 @@ fn is_node_free<T>(graph: &DependencyDag<T>, node: NodeIndex) -> bool {
         .graph()
         .edges_directed(node, Direction::Incoming)
         .next()
-        == None
+        .is_none()
 }
 
 /// Remove processed node from graph and return the nodes that are newly-available
@@ -118,7 +118,8 @@ fn remove_processed_node<T>(
     graph: &mut DependencyDag<T>,
     node: NodeIndex,
 ) -> impl Iterator<Item = NodeIndex> + '_ {
-    // False positive: need to give up immutable borrow of graph before removing node from graph
+    // False positive: need to store dependents and give up the immutable borrow of graph before
+    // removing the node from the graph
     #[allow(clippy::needless_collect)]
     let dependents: Vec<NodeIndex> = graph
         .graph()
@@ -141,6 +142,23 @@ fn free_nodes<T>(graph: &DependencyDag<T>) -> impl Iterator<Item = NodeIndex> + 
         .filter(|idx| is_node_free(graph, *idx))
 }
 
+/// Remove data from a given node in a graph
+///
+/// #### Returns
+///
+/// Data contained with the node or `None` if the node is empty
+///
+/// #### Panics
+///
+/// Panics if node is not contained in graph
+fn take_data<T>(graph: &mut DependencyDag<T>, node: NodeIndex) -> Option<T> {
+    graph
+        .node_weight_mut(node)
+        .expect("Node must be a member of graph")
+        .data
+        .take()
+}
+
 /// Run the given work function on each node in the dependency graph using a single thread.
 ///
 /// The nodes are processed in an order that respects the dependencies.
@@ -151,12 +169,8 @@ where
 {
     let mut work_queue: VecDeque<NodeIndex> = free_nodes(&graph).collect();
     while let Some(node) = work_queue.pop_front() {
-        let item = graph
-            .node_weight_mut(node)
-            .expect("Node is a member of graph")
-            .data
-            .take()
-            .expect("Node is only executed once");
+        let item = take_data(&mut graph, node)
+            .expect("Node data is empty. Node should only be processed once.");
         work_func(item);
         // Schedule any newly-available work
         work_queue.extend(remove_processed_node(&mut graph, node));
@@ -180,12 +194,8 @@ where
 
         while graph.node_count() > 0 {
             while let Some(node) = work_queue.pop_front() {
-                let item = graph
-                    .node_weight_mut(node)
-                    .expect("Node is a member of graph")
-                    .data
-                    .take()
-                    .expect("Node is only executed once");
+                let item = take_data(&mut graph, node)
+                    .expect("Node data is empty. Node should only be processed once.");
                 let tx = tx.clone();
                 let work_func = work_func.clone();
                 s.spawn(move |_| {
